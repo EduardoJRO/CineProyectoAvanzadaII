@@ -90,7 +90,7 @@ private final DetalleCompraDAO detalleDAO;
         btnEliminar = new javax.swing.JButton();
         btnSalir = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         tblDetalles.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
