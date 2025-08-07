@@ -227,49 +227,7 @@ public class BoletosDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
-        // 1. Validar campos obligatorios
-        if (!validarCampos()) {
-            return;
-        }
-
-        try {
-            // 2. Obtener datos del formulario
-            int idCompra = Integer.parseInt((String) cmbidcompra.getSelectedItem());
-            String nombreProducto = (String) cmbproductos.getSelectedItem();
-            long idProducto = obtenerIdProducto(nombreProducto);
-            int cantidad = (Integer) spncantidad.getValue();
-            BigDecimal precioUnitario = obtenerPrecioProducto(idProducto);
-
-            // 3. Crear objeto DetalleCompra
-            DetalleCompra detalle = new DetalleCompra();
-            detalle.setIdCompra(idCompra);
-            detalle.setIdProducto(idProducto);
-            detalle.setCantidad(cantidad);
-            detalle.setPrecioUnitario(precioUnitario);
-
-            // 4. Guardar en la base de datos
-            detalleDAO.insertar(detalle);
-
-            // 5. Mostrar mensaje de éxito
-            JOptionPane.showMessageDialog(this,
-                "Detalle de compra guardado correctamente",
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-            // 6. Actualizar la tabla
-            cargarDetallesCompra();
-
-            // 7. Limpiar campos para nueva entrada (opcional)
-            spncantidad.setValue(1);
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Error al guardar detalle: " + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                "ID de compra inválido",
-                "Error", JOptionPane.ERROR_MESSAGE);
-        }
+ 
     }//GEN-LAST:event_btnGuardarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
@@ -278,8 +236,7 @@ public class BoletosDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void cmbidcompraActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbidcompraActionPerformed
-        // TODO add your handling code here:
-        cargarDetallesCompra();
+
     }//GEN-LAST:event_cmbidcompraActionPerformed
 
     /**
