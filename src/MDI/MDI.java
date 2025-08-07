@@ -13,6 +13,10 @@ import cineproyecto.views.MainFuncionForm;
 import cineproyecto.views.MainPeliculasForm;
 import cineproyecto.views.MainProductosForm;
 import cineproyecto.views.MainUsuarioForm;
+import java.awt.Graphics;
+import java.awt.Image;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 
 /**
  *
@@ -25,7 +29,12 @@ public class MDI extends javax.swing.JFrame {
      */
     public MDI() {
         initComponents();
-          this.setLocationRelativeTo(null);
+          this.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+          ImageIcon back = new ImageIcon(getClass().getResource("/img/back.png"));//buscamos la imagen
+          
+          this.lblback.setIcon(back);
+
+          
     }
 
     /**
@@ -37,6 +46,7 @@ public class MDI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        lblback = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -156,11 +166,11 @@ public class MDI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 900, Short.MAX_VALUE)
+            .addComponent(lblback, javax.swing.GroupLayout.DEFAULT_SIZE, 900, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 578, Short.MAX_VALUE)
+            .addComponent(lblback, javax.swing.GroupLayout.DEFAULT_SIZE, 578, Short.MAX_VALUE)
         );
 
         pack();
@@ -269,5 +279,6 @@ public class MDI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JMenuItem jMenuItem9;
+    private javax.swing.JLabel lblback;
     // End of variables declaration//GEN-END:variables
 }
