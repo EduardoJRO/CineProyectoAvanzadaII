@@ -6,10 +6,7 @@ package cineproyecto.dao;
 import cineproyecto.models.Empleado;
 import java.sql.SQLException;
 import java.util.List;
-/**
- *
- * @author LENOVO
- */
+
 public interface EmpleadoDAO {
     void insertar(Empleado empleado) throws SQLException;
     void actualizar(Empleado empleado) throws SQLException;

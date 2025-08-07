@@ -37,38 +37,40 @@ public class MainEmpleadosForm extends javax.swing.JFrame {
 
     private void configurarTabla() {
         String[] columnNames = {"ID", "Nombre", "Teléfono", "Correo", "Puesto"};
-        Object[][] data = {};
-
-        model = new DefaultTableModel(data, columnNames) {
+        model = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-
         tblEmpleados.setModel(model);
     }
 
     private void cargarEmpleados() {
-        try {
-            model.setRowCount(0);
-            List<Empleado> empleados = empleadoDAO.obtenerTodos();
-
-            for (Empleado e : empleados) {
-                model.addRow(new Object[]{
-                    e.getIdEmpleado(),
-                    e.getNombreEmpleado(),
-                    e.getTelefonoEmpleado(),
-                    e.getCorreoEmpleado(),
-                    obtenerNombrePuesto(e.getIdPuesto())
-                });
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al cargar empleados: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
+    try {
+        cargarDatosEmpleados(empleadoDAO.obtenerTodos());
+    } catch (SQLException ex) {
+        mostrarError("Error al cargar empleados: " + ex.getMessage());
     }
-
+    }
+    
+    private void cargarDatosEmpleados(List<Empleado> empleados) {
+    model.setRowCount(0);
+    for (Empleado e : empleados) {
+        model.addRow(new Object[]{
+            e.getIdEmpleado(),
+            e.getNombreEmpleado(),
+            e.getTelefonoEmpleado(),
+            obtenerCorreoUsuario(e.getIdUsuario()),
+            obtenerNombrePuesto(e.getIdPuesto())
+        });
+    }
+    }
+    
+    private void mostrarError(String mensaje) {
+    JOptionPane.showMessageDialog(this, mensaje, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    
     private String obtenerNombrePuesto(int idPuesto) {
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
                 "SELECT puesto FROM puestos WHERE idpuesto = ?")) {
@@ -82,6 +84,20 @@ public class MainEmpleadosForm extends javax.swing.JFrame {
             return "Error";
         }
     }
+    
+    private String obtenerCorreoUsuario(int idUsuario) {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT correo FROM usuarios WHERE id_usuario = ?")) {
+        
+        stmt.setInt(1, idUsuario);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? rs.getString("correo") : "Sin correo";
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        return "Error al obtener correo";
+    }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -294,27 +310,17 @@ public class MainEmpleadosForm extends javax.swing.JFrame {
 
     private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
         String busqueda = txtBuscar.getText().trim();
-        if (busqueda.isEmpty()) {
-            cargarEmpleados();
-        } else {
-            try {
-                model.setRowCount(0);
-                List<Empleado> empleados = empleadoDAO.buscarPorNombre("%" + busqueda + "%");
-
-                for (Empleado e : empleados) {
-                    model.addRow(new Object[]{
-                        e.getIdEmpleado(),
-                        e.getNombreEmpleado(),
-                        e.getTelefonoEmpleado(),
-                        e.getCorreoEmpleado(),
-                        obtenerNombrePuesto(e.getIdPuesto())
-                    });
-                }
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error al buscar empleados: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
+    try {
+        List<Empleado> empleados = busqueda.isEmpty() 
+            ? empleadoDAO.obtenerTodos() 
+            : empleadoDAO.buscarPorNombre("%" + busqueda + "%");
+        cargarDatosEmpleados(empleados);
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, 
+            "Error al buscar empleados: " + ex.getMessage(),
+            "Error", 
+            JOptionPane.ERROR_MESSAGE);
+    }
     }//GEN-LAST:event_btnBuscarActionPerformed
 
     private void btnSalirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalirActionPerformed

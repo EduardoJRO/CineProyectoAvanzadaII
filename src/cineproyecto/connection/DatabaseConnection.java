@@ -14,7 +14,7 @@ import java.sql.SQLException;
 public class DatabaseConnection {
          private static final String URL = "jdbc:mysql://localhost:3308/cineproyecto";
     private static final String USER = "root"; // Cambiar por tu usuario MySQL
-    private static final String PASS = "monoenoshima.01"; // Cambiar por tu contraseña
+    private static final String PASS = "Adelbyjimy2003"; // Cambiar por tu contraseña
     
     public static Connection getConnection() throws SQLException {
          return DriverManager.getConnection(URL, USER, PASS);

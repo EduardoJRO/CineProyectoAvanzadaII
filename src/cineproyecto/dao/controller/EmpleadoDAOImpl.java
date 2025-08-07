@@ -14,8 +14,8 @@ import java.util.List;
  * @author LENOVO
  */
 public class EmpleadoDAOImpl implements EmpleadoDAO{
-    private static final String INSERT_SQL = "INSERT INTO empleados(id_empleado, nombre_empleado, telefono_empleado, correo_empleado, idpuesto) VALUES (?, ?, ?, ?, ?)";
-    private static final String UPDATE_SQL = "UPDATE empleados SET nombre_empleado=?, telefono_empleado=?, correo_empleado=?, idpuesto=? WHERE id_empleado=?";
+    private static final String INSERT_SQL = "INSERT INTO empleados(id_empleado, nombre_empleado, telefono_empleado, idpuesto, id_usuario) VALUES (?, ?, ?, ?, ?)";
+    private static final String UPDATE_SQL = "UPDATE empleados SET nombre_empleado=?, telefono_empleado=?, idpuesto=?, id_usuario=? WHERE id_empleado=?";
     private static final String DELETE_SQL = "DELETE FROM empleados WHERE id_empleado=?";
     private static final String GET_BY_ID_SQL = "SELECT * FROM empleados WHERE id_empleado=?";
     private static final String GET_ALL_SQL = "SELECT * FROM empleados ORDER BY nombre_empleado";
@@ -30,8 +30,8 @@ public class EmpleadoDAOImpl implements EmpleadoDAO{
             stmt.setString(1, empleado.getIdEmpleado());
             stmt.setString(2, empleado.getNombreEmpleado());
             stmt.setString(3, empleado.getTelefonoEmpleado());
-            stmt.setString(4, empleado.getCorreoEmpleado());
-            stmt.setInt(5, empleado.getIdPuesto());
+            stmt.setInt(4, empleado.getIdPuesto());
+            stmt.setInt(5, empleado.getIdUsuario()); // Cambiado de getCorreoEmpleado()
             
             stmt.executeUpdate();
         }
@@ -44,8 +44,8 @@ public class EmpleadoDAOImpl implements EmpleadoDAO{
             
             stmt.setString(1, empleado.getNombreEmpleado());
             stmt.setString(2, empleado.getTelefonoEmpleado());
-            stmt.setString(3, empleado.getCorreoEmpleado());
-            stmt.setInt(4, empleado.getIdPuesto());
+            stmt.setInt(3, empleado.getIdPuesto());
+            stmt.setInt(4, empleado.getIdUsuario()); // Cambiado de getCorreoEmpleado()
             stmt.setString(5, empleado.getIdEmpleado());
             
             stmt.executeUpdate();
@@ -61,8 +61,9 @@ public class EmpleadoDAOImpl implements EmpleadoDAO{
             stmt.executeUpdate();
         }
     }
-
-    @Override
+    
+    
+      @Override
     public Empleado obtenerPorId(String idEmpleado) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(GET_BY_ID_SQL)) {
@@ -70,13 +71,7 @@ public class EmpleadoDAOImpl implements EmpleadoDAO{
             stmt.setString(1, idEmpleado);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Empleado(
-                        rs.getString("id_empleado"),
-                        rs.getString("nombre_empleado"),
-                        rs.getString("telefono_empleado"),
-                        rs.getString("correo_empleado"),
-                        rs.getInt("idpuesto")
-                    );
+                    return mapearEmpleado(rs); // Extraído a método privado
                 }
             }
         }
@@ -92,30 +87,24 @@ public class EmpleadoDAOImpl implements EmpleadoDAO{
              ResultSet rs = stmt.executeQuery(GET_ALL_SQL)) {
             
             while (rs.next()) {
-                empleados.add(new Empleado(
-                    rs.getString("id_empleado"),
-                    rs.getString("nombre_empleado"),
-                    rs.getString("telefono_empleado"),
-                    rs.getString("correo_empleado"),
-                    rs.getInt("idpuesto")
-                ));
+                empleados.add(mapearEmpleado(rs));
             }
         }
         return empleados;
     }
 
-    @Override
-    public boolean existeEmpleado(String idEmpleado) throws SQLException {
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(EXISTS_SQL)) {
-            
-            stmt.setString(1, idEmpleado);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        }
+    // Método privado para mapear ResultSet a Empleado
+    private Empleado mapearEmpleado(ResultSet rs) throws SQLException {
+        return new Empleado(
+            rs.getString("id_empleado"),
+            rs.getString("nombre_empleado"),
+            rs.getString("telefono_empleado"),
+            rs.getInt("id_usuario"),
+            rs.getInt("idpuesto")
+        );
     }
 
+    // buscarPorNombre también usaría mapearEmpleado()
     @Override
     public List<Empleado> buscarPorNombre(String nombre) throws SQLException {
         List<Empleado> empleados = new ArrayList<>();
@@ -127,16 +116,23 @@ public class EmpleadoDAOImpl implements EmpleadoDAO{
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    empleados.add(new Empleado(
-                        rs.getString("id_empleado"),
-                        rs.getString("nombre_empleado"),
-                        rs.getString("telefono_empleado"),
-                        rs.getString("correo_empleado"),
-                        rs.getInt("idpuesto")
-                    ));
+                    empleados.add(mapearEmpleado(rs));
                 }
             }
         }
         return empleados;
+    }
+    
+
+    @Override
+    public boolean existeEmpleado(String idEmpleado) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(EXISTS_SQL)) {
+            
+            stmt.setString(1, idEmpleado);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
     }
 }

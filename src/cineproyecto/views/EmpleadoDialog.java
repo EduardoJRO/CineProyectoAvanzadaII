@@ -34,43 +34,70 @@ public class EmpleadoDialog extends javax.swing.JDialog {
     }
     
     private void configurarInterfaz() {
-        if (empleado != null) { // Modo edición
-            txtId.setText(empleado.getIdEmpleado());
-            txtNombre.setText(empleado.getNombreEmpleado());
-            txtTelefono.setText(empleado.getTelefonoEmpleado());
-            txtCorreo.setText(empleado.getCorreoEmpleado());
-            btnGuardar.setText("Actualizar");
-            
-            // Deshabilitar campo ID en edición
-            txtId.setEnabled(false);
-        } else { // Modo nuevo
-            btnGuardar.setText("Guardar");
+    if (empleado != null) { // Modo edición
+        txtId.setText(empleado.getIdEmpleado());
+        txtNombre.setText(empleado.getNombreEmpleado());
+        txtTelefono.setText(empleado.getTelefonoEmpleado());
+        
+        // Solo cargar el correo si existe
+        if (empleado.getIdUsuario() > 0) {
+            String correo = obtenerCorreoUsuario(empleado.getIdUsuario());
+            cmbCorreo.setSelectedItem(correo);
         }
+        
+        btnGuardar.setText("Actualizar");
+        txtId.setEnabled(false);
+    } else {
+        btnGuardar.setText("Guardar");
     }
-    
+}
+    private String obtenerCorreoUsuario(int idUsuario) {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT correo FROM usuarios WHERE id_usuario = ?")) {
+        
+        stmt.setInt(1, idUsuario);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? rs.getString("correo") : "Sin correo";
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        return "Error al obtener correo";
+    }
+}
     private void cargarCombos() {
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            // Cargar puestos
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT idpuesto, puesto FROM puestos");
-            ResultSet rs = stmt.executeQuery();
-            
-            DefaultComboBoxModel<String> modelPuestos = new DefaultComboBoxModel<>();
-            while (rs.next()) {
-                modelPuestos.addElement(rs.getString("puesto"));
-            }
-            cmbPuesto.setModel(modelPuestos);
-            
-            // Seleccionar valor actual si estamos editando
-            if (empleado != null) {
-                seleccionarValorCombo(cmbPuesto, empleado.getIdPuesto(), "puesto", "idpuesto");
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error al cargar puestos: " + ex.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+    try (Connection conn = DatabaseConnection.getConnection()) {
+        // Cargar puestos (en el combo correcto)
+        PreparedStatement stmtPuestos = conn.prepareStatement(
+            "SELECT idpuesto, puesto FROM puestos");
+        ResultSet rsPuestos = stmtPuestos.executeQuery();
+        
+        DefaultComboBoxModel<String> modelPuestos = new DefaultComboBoxModel<>();
+        while (rsPuestos.next()) {
+            modelPuestos.addElement(rsPuestos.getString("puesto"));
         }
+        cmbPuesto.setModel(modelPuestos);
+        
+        // Cargar correos de usuarios
+        PreparedStatement stmtCorreos = conn.prepareStatement(
+            "SELECT id_usuario, correo FROM usuarios");
+        ResultSet rsCorreos = stmtCorreos.executeQuery();
+        
+        DefaultComboBoxModel<String> modelCorreos = new DefaultComboBoxModel<>();
+        while (rsCorreos.next()) {
+            modelCorreos.addElement(rsCorreos.getString("correo"));
+        }
+        cmbCorreo.setModel(modelCorreos);
+        
+        // Seleccionar valores actuales si estamos editando
+        if (empleado != null) {
+            seleccionarValorCombo(cmbPuesto, empleado.getIdPuesto(), "puesto", "idpuesto");
+        }
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, 
+            "Error al cargar datos: " + ex.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
     
     private void seleccionarValorCombo(JComboBox<String> combo, int id, String columnaNombre, String columnaId) {
         try (Connection conn = DatabaseConnection.getConnection();
@@ -103,6 +130,16 @@ public class EmpleadoDialog extends javax.swing.JDialog {
         return true;
     }
     
+    private int obtenerIdUsuario(String correo) throws SQLException {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT id_usuario FROM usuarios WHERE correo = ?")) {
+        
+        stmt.setString(1, correo);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? rs.getInt("id_usuario") : -1;
+    }
+}
     private void guardarEmpleado() {
     if (!validarCampos()) return;
     
@@ -112,40 +149,26 @@ public class EmpleadoDialog extends javax.swing.JDialog {
         empleadoActual.setIdEmpleado(txtId.getText().trim());
         empleadoActual.setNombreEmpleado(txtNombre.getText().trim());
         empleadoActual.setTelefonoEmpleado(txtTelefono.getText().trim());
-        empleadoActual.setCorreoEmpleado(txtCorreo.getText().trim());
         
-        // Validar que se haya seleccionado un puesto
-        if (cmbPuesto.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un puesto", 
-                "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        // Obtener ID del usuario seleccionado por su correo
+        String correo = cmbCorreo.getSelectedItem().toString();
+        int idUsuario = obtenerIdUsuario(correo);
+        empleadoActual.setIdUsuario(idUsuario);
         
-        // Obtener ID del puesto seleccionado de forma segura
+        // Obtener ID del puesto seleccionado
         String nombrePuesto = cmbPuesto.getSelectedItem().toString();
         int idPuesto = obtenerIdPuesto(nombrePuesto);
-        
-        if (idPuesto == -1) {
-            JOptionPane.showMessageDialog(this, "El puesto seleccionado no es válido", 
-                "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
         empleadoActual.setIdPuesto(idPuesto);
         
-        if (empleado == null) { // Nuevo
+        if (empleado == null) {
             if (empleadoDAO.existeEmpleado(empleadoActual.getIdEmpleado())) {
                 JOptionPane.showMessageDialog(this, "Ya existe un empleado con este ID", 
                     "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             empleadoDAO.insertar(empleadoActual);
-            JOptionPane.showMessageDialog(this, "Empleado registrado exitosamente", 
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
-        } else { // Edición
+        } else {
             empleadoDAO.actualizar(empleadoActual);
-            JOptionPane.showMessageDialog(this, "Empleado actualizado exitosamente", 
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
         }
         
         dispose();
@@ -190,8 +213,8 @@ public class EmpleadoDialog extends javax.swing.JDialog {
         txtId = new javax.swing.JTextField();
         txtNombre = new javax.swing.JTextField();
         txtTelefono = new javax.swing.JTextField();
-        txtCorreo = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
+        cmbCorreo = new javax.swing.JComboBox<>();
         cmbPuesto = new javax.swing.JComboBox<>();
         jPanel2 = new javax.swing.JPanel();
         btnGuardar = new javax.swing.JButton();
@@ -234,14 +257,17 @@ public class EmpleadoDialog extends javax.swing.JDialog {
                         .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(jLabel6))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(txtId, javax.swing.GroupLayout.DEFAULT_SIZE, 346, Short.MAX_VALUE)
-                        .addComponent(txtNombre)
-                        .addComponent(txtTelefono, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(txtCorreo))
-                    .addComponent(cmbPuesto, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(txtId, javax.swing.GroupLayout.DEFAULT_SIZE, 346, Short.MAX_VALUE)
+                    .addComponent(txtNombre)
+                    .addComponent(txtTelefono, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cmbCorreo, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap(23, Short.MAX_VALUE))
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                    .addContainerGap(189, Short.MAX_VALUE)
+                    .addComponent(cmbPuesto, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(177, 177, 177)))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -261,12 +287,15 @@ public class EmpleadoDialog extends javax.swing.JDialog {
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel5)
-                    .addComponent(txtCorreo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel6)
-                    .addComponent(cmbPuesto, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(27, 27, 27))
+                    .addComponent(cmbCorreo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 43, Short.MAX_VALUE)
+                .addComponent(jLabel6)
+                .addGap(29, 29, 29))
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                    .addContainerGap(199, Short.MAX_VALUE)
+                    .addComponent(cmbPuesto, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(17, 17, 17)))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Controles", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Gadugi", 1, 12))); // NOI18N
@@ -332,7 +361,7 @@ public class EmpleadoDialog extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(28, Short.MAX_VALUE))
+                .addContainerGap(26, Short.MAX_VALUE))
         );
 
         pack();
@@ -391,6 +420,7 @@ public class EmpleadoDialog extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCancelar;
     private javax.swing.JButton btnGuardar;
+    private javax.swing.JComboBox<String> cmbCorreo;
     private javax.swing.JComboBox<String> cmbPuesto;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -400,7 +430,6 @@ public class EmpleadoDialog extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JTextField txtCorreo;
     private javax.swing.JTextField txtId;
     private javax.swing.JTextField txtNombre;
     private javax.swing.JTextField txtTelefono;

@@ -12,17 +12,17 @@ public class Empleado {
     private String idEmpleado;
     private String nombreEmpleado;
     private String telefonoEmpleado;
-    private String correoEmpleado;
+    private int usuario;
     private int idPuesto;
     
     public Empleado() {}
     
     public Empleado(String idEmpleado, String nombreEmpleado, String telefonoEmpleado, 
-                  String correoEmpleado, int idPuesto) {
+                  int idUsuario, int idPuesto) {
         this.idEmpleado = idEmpleado;
         this.nombreEmpleado = nombreEmpleado;
         this.telefonoEmpleado = telefonoEmpleado;
-        this.correoEmpleado = correoEmpleado;
+        this.usuario = idUsuario;
         this.idPuesto = idPuesto;
     }
     
@@ -59,14 +59,9 @@ public class Empleado {
     this.telefonoEmpleado = telefonoEmpleado;
     }
     
-    public String getCorreoEmpleado() { return correoEmpleado; }
-    public void setCorreoEmpleado(String correoEmpleado) {
-        // Validación básica de correo electrónico
-        if (correoEmpleado != null && !correoEmpleado.isEmpty() && 
-            !correoEmpleado.matches("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
-            throw new IllegalArgumentException("Formato de correo electrónico inválido");
-        }
-        this.correoEmpleado = correoEmpleado;
+    public int getIdUsuario() { return usuario; }
+    public void setIdUsuario(int correoEmpleado) {
+        this.usuario = correoEmpleado;
     }
     
     
