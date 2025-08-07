@@ -31,48 +31,63 @@ public class MainPeliculasForm extends javax.swing.JFrame {
         configurarTabla();
         cargarPeliculas();
     }
+    
 private void configurarTabla() {
-    // Columnas de la tabla
     String[] columnNames = {"ID", "Título", "Idioma", "Duración (min)", "Clasificación", "Género", "Disponible"};
     
-    // Datos iniciales (vacíos)
-    Object[][] data = {};
-    
-    model = new DefaultTableModel(data, columnNames) {
+    model = new DefaultTableModel(columnNames, 0) {
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex == 6) return Boolean.class; // Columna "Disponible" como checkbox
+            if (columnIndex == 6) return Boolean.class; // Columna "Disponible"
             return Object.class;
         }
         
         @Override
         public boolean isCellEditable(int row, int column) {
-            return false; // Hacer toda la tabla no editable
+            return false; // Tabla no editable
         }
     };
     
     tblPeliculas.setModel(model);
 }
     private void cargarPeliculas() {
-        try {
-            model.setRowCount(0); // Limpiar tabla
-            List<Pelicula> peliculas = peliculaDAO.obtenerTodos();
-            
-            for (Pelicula p : peliculas) {
-                model.addRow(new Object[]{
-                    p.getIdPelicula(),
-                    p.getTitulo(),
-                    p.getIdiomaOriginal(),
-                    p.getDuracionMinutos(),
-                    obtenerNombreClasificacion(p.getIdClasificacion()),
-                    obtenerNombreGenero(p.getIdGenero()),
-                    p.isDisponible()
-                });
-            }
+    try {
+        model.setRowCount(0); // Limpiar tabla
+        List<Pelicula> peliculas = peliculaDAO.obtenerTodos();
+        
+        for (Pelicula p : peliculas) {
+            model.addRow(new Object[]{
+                p.getIdPelicula(),
+                p.getTitulo(),
+                obtenerNombreIdioma(p.getIdIdioma()), // Cambiado de getIdiomaOriginal()
+                p.getDuracionMinutos(),
+                obtenerNombreClasificacion(p.getIdClasificacion()),
+                obtenerNombreGenero(p.getIdGenero()),
+                p.isDisponible()
+            });
+        }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al cargar películas: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "Error al cargar películas: " + ex.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+    private String obtenerNombreIdioma(int idIdioma) {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT nombre_idioma FROM idiomas WHERE id_idioma = ?")) {
+        
+        stmt.setInt(1, idIdioma);
+        ResultSet rs = stmt.executeQuery();
+        
+        return rs.next() ? rs.getString("nombre_idioma") : "Desconocido";
+        
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        return "Error";
+    }
+}
     
  private String obtenerNombreClasificacion(int id) {
     try (Connection conn = DatabaseConnection.getConnection();
@@ -331,29 +346,31 @@ private String obtenerNombreGenero(int id) {
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
-         String busqueda = txtBuscar.getText().trim();
-        if (busqueda.isEmpty()) {
-            cargarPeliculas();
-        } else {
-            try {
-                model.setRowCount(0);
-                List<Pelicula> peliculas = peliculaDAO.buscarPorTitulo("%" + busqueda + "%");
-                
-                for (Pelicula p : peliculas) {
-                    model.addRow(new Object[]{
-                        p.getIdPelicula(),
-                        p.getTitulo(),
-                        p.getIdiomaOriginal(),
-                        p.getDuracionMinutos(),
-                        obtenerNombreClasificacion(p.getIdClasificacion()),
-                        obtenerNombreGenero(p.getIdGenero()),
-                        p.isDisponible()
-                    });
-                }
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error al buscar películas: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        String busqueda = txtBuscar.getText().trim();
+    if (busqueda.isEmpty()) {
+        cargarPeliculas();
+    } else {
+        try {
+            model.setRowCount(0);
+            List<Pelicula> peliculas = peliculaDAO.buscarPorTitulo("%" + busqueda + "%");
+            
+            for (Pelicula p : peliculas) {
+                model.addRow(new Object[]{
+                    p.getIdPelicula(),
+                    p.getTitulo(),
+                    obtenerNombreIdioma(p.getIdIdioma()), // Cambiado de getIdiomaOriginal()
+                    p.getDuracionMinutos(),
+                    obtenerNombreClasificacion(p.getIdClasificacion()),
+                    obtenerNombreGenero(p.getIdGenero()),
+                    p.isDisponible()
+                });
             }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Error al buscar películas: " + ex.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
     }//GEN-LAST:event_btnBuscarActionPerformed
 
     private void btnSalirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalirActionPerformed

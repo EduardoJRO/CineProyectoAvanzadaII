@@ -16,8 +16,8 @@ import java.util.List;
  */
 public class PeliculaDAOImpl implements PeliculaDAO {
     
-    private static final String INSERT_SQL = "INSERT INTO pelicula (titulo, idioma_original, disponible, sinopsis, duracion_minutos, idclasificacion, idgenero) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    private static final String UPDATE_SQL = "UPDATE pelicula SET titulo=?, idioma_original=?, disponible=?, sinopsis=?, duracion_minutos=?, idclasificacion=?, idgenero=? WHERE idpelicula=?";
+    private static final String INSERT_SQL = "INSERT INTO pelicula (titulo, id_idioma, disponible, sinopsis, duracion_minutos, idclasificacion, idgenero) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    private static final String UPDATE_SQL = "UPDATE pelicula SET titulo=?, id_idioma=?, disponible=?, sinopsis=?, duracion_minutos=?, idclasificacion=?, idgenero=? WHERE idpelicula=?";
     private static final String DELETE_SQL = "DELETE FROM pelicula WHERE idpelicula=?";
     private static final String GET_BY_ID_SQL = "SELECT * FROM pelicula WHERE idpelicula=?";
     private static final String GET_ALL_SQL = "SELECT * FROM pelicula";
@@ -27,17 +27,17 @@ public class PeliculaDAOImpl implements PeliculaDAO {
     public void insertar(Pelicula pelicula) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-            
+
             stmt.setString(1, pelicula.getTitulo());
-            stmt.setString(2, pelicula.getIdiomaOriginal());
+            stmt.setInt(2, pelicula.getIdIdioma());  // Cambiado de setString a setInt
             stmt.setBoolean(3, pelicula.isDisponible());
             stmt.setString(4, pelicula.getSinopsis());
             stmt.setInt(5, pelicula.getDuracionMinutos());
             stmt.setInt(6, pelicula.getIdClasificacion());
             stmt.setInt(7, pelicula.getIdGenero());
-            
+
             stmt.executeUpdate();
-            
+
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     pelicula.setIdPelicula(generatedKeys.getInt(1));
@@ -50,16 +50,16 @@ public class PeliculaDAOImpl implements PeliculaDAO {
     public void actualizar(Pelicula pelicula) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(UPDATE_SQL)) {
-            
+
             stmt.setString(1, pelicula.getTitulo());
-            stmt.setString(2, pelicula.getIdiomaOriginal());
+            stmt.setInt(2, pelicula.getIdIdioma());  // Cambiado de setString a setInt
             stmt.setBoolean(3, pelicula.isDisponible());
             stmt.setString(4, pelicula.getSinopsis());
             stmt.setInt(5, pelicula.getDuracionMinutos());
             stmt.setInt(6, pelicula.getIdClasificacion());
             stmt.setInt(7, pelicula.getIdGenero());
             stmt.setInt(8, pelicula.getIdPelicula());
-            
+
             stmt.executeUpdate();
         }
     }
@@ -78,14 +78,14 @@ public class PeliculaDAOImpl implements PeliculaDAO {
     public Pelicula obtenerPorId(int idPelicula) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(GET_BY_ID_SQL)) {
-            
+
             stmt.setInt(1, idPelicula);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return new Pelicula(
                         rs.getInt("idpelicula"),
                         rs.getString("titulo"),
-                        rs.getString("idioma_original"),
+                        rs.getInt("id_idioma"),  // Cambiado de getString a getInt
                         rs.getBoolean("disponible"),
                         rs.getString("sinopsis"),
                         rs.getInt("duracion_minutos"),
@@ -101,16 +101,16 @@ public class PeliculaDAOImpl implements PeliculaDAO {
     @Override
     public List<Pelicula> obtenerTodos() throws SQLException {
         List<Pelicula> peliculas = new ArrayList<>();
-        
+
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(GET_ALL_SQL)) {
-            
+
             while (rs.next()) {
                 peliculas.add(new Pelicula(
                     rs.getInt("idpelicula"),
                     rs.getString("titulo"),
-                    rs.getString("idioma_original"),
+                    rs.getInt("id_idioma"),  // Cambiado de getString a getInt
                     rs.getBoolean("disponible"),
                     rs.getString("sinopsis"),
                     rs.getInt("duracion_minutos"),
@@ -125,18 +125,18 @@ public class PeliculaDAOImpl implements PeliculaDAO {
     @Override
     public List<Pelicula> buscarPorTitulo(String titulo) throws SQLException {
         List<Pelicula> peliculas = new ArrayList<>();
-        
+
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SEARCH_SQL)) {
-            
+
             stmt.setString(1, "%" + titulo + "%");
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     peliculas.add(new Pelicula(
                         rs.getInt("idpelicula"),
                         rs.getString("titulo"),
-                        rs.getString("idioma_original"),
+                        rs.getInt("id_idioma"),  // Cambiado de getString a getInt
                         rs.getBoolean("disponible"),
                         rs.getString("sinopsis"),
                         rs.getInt("duracion_minutos"),

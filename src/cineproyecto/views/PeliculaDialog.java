@@ -36,54 +36,90 @@ private final PeliculaDAO peliculaDAO;
         configurarInterfaz();
         cargarCombos();
     }
- private void configurarInterfaz() {
-        if (pelicula != null) { // Modo edición
-            txtTitulo.setText(pelicula.getTitulo());
-            cmbIdioma.setSelectedItem(pelicula.getIdiomaOriginal());
-            txtSinopsis.setText(pelicula.getSinopsis());
-            spnDuracion.setValue(pelicula.getDuracionMinutos());
-            chkDisponible.setSelected(pelicula.isDisponible());
-            btnGuardar.setText("Actualizar");
-        } else { // Modo nuevo
-            btnGuardar.setText("Guardar");
-        }
+ 
+    private void configurarInterfaz() {
+    if (pelicula != null) { // Modo edición
+        txtTitulo.setText(pelicula.getTitulo());
+        txtSinopsis.setText(pelicula.getSinopsis());
+        spnDuracion.setValue(pelicula.getDuracionMinutos());
+        chkDisponible.setSelected(pelicula.isDisponible());
+        btnGuardar.setText("Actualizar");
+        
+        // No necesitamos establecer el idioma aquí porque se hace en cargarCombos()
+    } else { // Modo nuevo
+        btnGuardar.setText("Guardar");
     }
+}
     
-  private void cargarCombos() {
+private void cargarCombos() {
     try (Connection conn = DatabaseConnection.getConnection()) {
+        // Cargar idiomas
+        // Cargar idiomas (versión simplificada)
+        PreparedStatement stmtIdiomas = conn.prepareStatement(
+            "SELECT nombre_idioma FROM idiomas ORDER BY nombre_idioma");
+        ResultSet rsIdiomas = stmtIdiomas.executeQuery();
+        
+        DefaultComboBoxModel<String> modelIdioma = new DefaultComboBoxModel<>();
+        while (rsIdiomas.next()) {
+            modelIdioma.addElement(rsIdiomas.getString("nombre_idioma"));
+        }
+        cmbIdioma.setModel(modelIdioma);
+        
         // Cargar clasificaciones
-        PreparedStatement stmt = conn.prepareStatement(
+        PreparedStatement stmtClasif = conn.prepareStatement(
             "SELECT idclasificacion, clasificacion FROM clasificacion");
-        ResultSet rs = stmt.executeQuery();
+        ResultSet rsClasif = stmtClasif.executeQuery();
         
         DefaultComboBoxModel<String> modelClasif = new DefaultComboBoxModel<>();
-        while (rs.next()) {
-            modelClasif.addElement(rs.getString("clasificacion"));
+        while (rsClasif.next()) {
+            modelClasif.addElement(rsClasif.getString("clasificacion"));
         }
         cmbClasificacion.setModel(modelClasif);
         
         // Cargar géneros
-        stmt = conn.prepareStatement("SELECT idgenero, genero FROM genero");
-        rs = stmt.executeQuery();
+        PreparedStatement stmtGenero = conn.prepareStatement(
+            "SELECT idgenero, genero FROM genero");
+        ResultSet rsGenero = stmtGenero.executeQuery();
         
         DefaultComboBoxModel<String> modelGenero = new DefaultComboBoxModel<>();
-        while (rs.next()) {
-            modelGenero.addElement(rs.getString("genero"));
+        while (rsGenero.next()) {
+            modelGenero.addElement(rsGenero.getString("genero"));
         }
         cmbGenero.setModel(modelGenero);
         
+        
+        
         // Seleccionar valores actuales si estamos editando
         if (pelicula != null) {
+            seleccionarIdiomaEnCombo(pelicula.getIdIdioma());
             seleccionarValorCombo(cmbClasificacion, pelicula.getIdClasificacion(), "clasificacion", "idclasificacion");
             seleccionarValorCombo(cmbGenero, pelicula.getIdGenero(), "genero", "idgenero");
         }
         
     } catch (SQLException ex) {
         JOptionPane.showMessageDialog(this, 
-            "Error al cargar categorías: " + ex.getMessage(), 
+            "Error al cargar datos: " + ex.getMessage(), 
             "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
+
+private void seleccionarIdiomaEnCombo(int idIdioma) {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT nombre_idioma FROM idiomas WHERE id_idioma = ?")) {
+        
+        stmt.setInt(1, idIdioma);
+        ResultSet rs = stmt.executeQuery();
+        
+        if (rs.next()) {
+            String nombreIdioma = rs.getString("nombre_idioma");
+            cmbIdioma.setSelectedItem(nombreIdioma);
+        }
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+    }
+}
+ 
   private void seleccionarValorCombo(JComboBox<String> combo, int id, String tabla, String columnaId) {
     try (Connection conn = DatabaseConnection.getConnection();
          PreparedStatement stmt = conn.prepareStatement(
@@ -111,51 +147,72 @@ private final PeliculaDAO peliculaDAO;
         return true;
     }
     
-     private void guardarPelicula() {
-        if (!validarCampos()) return;
+private void guardarPelicula() {
+    if (!validarCampos()) return;
+    
+    try {
+        Pelicula peliculaActual = (pelicula == null) ? new Pelicula() : pelicula;
         
-        try {
-            Pelicula peliculaActual = (pelicula == null) ? new Pelicula() : pelicula;
-            
-            peliculaActual.setTitulo(txtTitulo.getText().trim());
-            peliculaActual.setIdiomaOriginal(cmbIdioma.getSelectedItem().toString());
-            peliculaActual.setSinopsis(txtSinopsis.getText().trim());
-            peliculaActual.setDuracionMinutos((int) spnDuracion.getValue());
-            peliculaActual.setDisponible(chkDisponible.isSelected());
-            
-            // Obtener IDs de clasificación y género (implementar según tu BD)
-            peliculaActual.setIdClasificacion(cmbClasificacion.getSelectedIndex() + 1);
-            peliculaActual.setIdGenero(cmbGenero.getSelectedIndex() + 1);
-            
-            if (pelicula == null) { // Nuevo
-                peliculaDAO.insertar(peliculaActual);
-                JOptionPane.showMessageDialog(this, "Película registrada exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else { // Edición
-                peliculaDAO.actualizar(peliculaActual);
-                JOptionPane.showMessageDialog(this, "Película actualizada exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            }
-            
-            dispose(); // Cerrar diálogo
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al guardar película: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-         try (Connection conn = DatabaseConnection.getConnection()) {
+        peliculaActual.setTitulo(txtTitulo.getText().trim());
+        
+        // Obtener ID del idioma seleccionado
+        String nombreIdioma = cmbIdioma.getSelectedItem().toString();
+        int idIdioma = obtenerIdIdioma(nombreIdioma);
+        peliculaActual.setIdIdioma(idIdioma);
+        
+        peliculaActual.setSinopsis(txtSinopsis.getText().trim());
+        peliculaActual.setDuracionMinutos((int) spnDuracion.getValue());
+        peliculaActual.setDisponible(chkDisponible.isSelected());
+        
         // Obtener ID de clasificación
-        PreparedStatement stmt = conn.prepareStatement(
-            "SELECT idclasificacion FROM clasificacion WHERE clasificacion = ?");
-        stmt.setString(1, cmbClasificacion.getSelectedItem().toString());
-        ResultSet rs = stmt.executeQuery();
-                
-        // Obtener ID de género
-        stmt = conn.prepareStatement(
-            "SELECT idgenero FROM genero WHERE genero = ?");
-        stmt.setString(1, cmbGenero.getSelectedItem().toString());
-        rs = stmt.executeQuery();
+        String clasificacion = cmbClasificacion.getSelectedItem().toString();
+        int idClasificacion = obtenerIdDesdeNombre(clasificacion, "clasificacion", "idclasificacion");
+        peliculaActual.setIdClasificacion(idClasificacion);
         
+        // Obtener ID de género
+        String genero = cmbGenero.getSelectedItem().toString();
+        int idGenero = obtenerIdDesdeNombre(genero, "genero", "idgenero");
+        peliculaActual.setIdGenero(idGenero);
+        
+        if (pelicula == null) {
+            peliculaDAO.insertar(peliculaActual);
+            JOptionPane.showMessageDialog(this, "Película registrada exitosamente", 
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            peliculaDAO.actualizar(peliculaActual);
+            JOptionPane.showMessageDialog(this, "Película actualizada exitosamente", 
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        }
+        
+        dispose();
     } catch (SQLException ex) {
-        ex.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error al guardar película: " + ex.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
+
+private int obtenerIdIdioma(String nombreIdioma) throws SQLException {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT id_idioma FROM idiomas WHERE nombre_idioma = ?")) {
+        
+        stmt.setString(1, nombreIdioma);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? rs.getInt("id_idioma") : -1;
     }
+}
+
+
+private int obtenerIdDesdeNombre(String nombre, String tabla, String columnaId) throws SQLException {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(
+             "SELECT " + columnaId + " FROM " + tabla + " WHERE " + tabla + " = ?")) {
+        
+        stmt.setString(1, nombre);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? rs.getInt(columnaId) : -1;
+    }
+}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -218,8 +275,6 @@ private final PeliculaDAO peliculaDAO;
                 txtTituloActionPerformed(evt);
             }
         });
-
-        cmbIdioma.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Español", "Ingles", "Frances", "Otro" }));
 
         jLabel5.setFont(new java.awt.Font("Gadugi", 0, 14)); // NOI18N
         jLabel5.setText("Clasificacion:");
