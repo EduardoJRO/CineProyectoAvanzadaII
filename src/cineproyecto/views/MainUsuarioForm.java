@@ -183,6 +183,7 @@ private Usuarios usuarioActual;
         tblUsuarios = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setResizable(false);
 
         jLabel4.setFont(new java.awt.Font("Gadugi", 0, 14)); // NOI18N
         jLabel4.setText("Contraseña del Administrador:");

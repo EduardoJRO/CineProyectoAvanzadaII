@@ -4,10 +4,9 @@
  */
 package cineproyecto.views;
 import cineproyecto.connection.DatabaseConnection;
-import cineproyecto.dao.ProductoDAO;
-import cineproyecto.dao.controller.ProductoDAOImpl;
-import cineproyecto.models.Producto;
-import java.math.BigInteger;
+import cineproyecto.dao.FuncionDAO;
+import cineproyecto.dao.controller.FuncionesDAOImpl;
+import cineproyecto.models.Funcion;
 import java.sql.*;
 import java.util.List;
 import javax.swing.*;
@@ -16,21 +15,21 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author LENOVO
  */
-public class MainProductosForm extends javax.swing.JFrame {
-    private final ProductoDAO productoDAO;
-    private DefaultTableModel model;
+public class MainFuncionForm extends javax.swing.JFrame {
+private final FuncionDAO funcionDAO;
+private DefaultTableModel model;
     /**
-     * Creates new form MainProductosForm
+     * Creates new form MainFuncionForm
      */
-    public MainProductosForm() {
+    public MainFuncionForm() {
         initComponents();
-        productoDAO = new ProductoDAOImpl();
+        funcionDAO = new FuncionesDAOImpl();
         configurarTabla();
-        cargarProductos();
+        cargarFunciones();
     }
     
     private void configurarTabla() {
-        String[] columnNames = {"Código Barras", "Producto", "Tipo", "Precio Unitario"};
+        String[] columnNames = {"ID", "Película", "Fecha", "Hora Inicio", "Sala", "Precio"};
         Object[][] data = {};
         
         model = new DefaultTableModel(data, columnNames) {
@@ -40,44 +39,60 @@ public class MainProductosForm extends javax.swing.JFrame {
             }
         };
         
-        tblProductos.setModel(model);
+        tblFunciones.setModel(model);
     }
     
-    private void cargarProductos() {
+    private void cargarFunciones() {
         try {
             model.setRowCount(0);
-            List<Producto> productos = productoDAO.obtenerTodos();
+            List<Funcion> funciones = funcionDAO.obtenerTodos();
             
-            for (Producto p : productos) {
+            for (Funcion f : funciones) {
                 model.addRow(new Object[]{
-                    p.getIdProducto(),
-                    p.getProducto(),
-                    obtenerNombreTipoProducto(p.getIdTipoProducto()),
-                    String.format("%,.2f", p.getPrecioUnitario())
+                    f.getIdFuncion(),
+                    obtenerNombrePelicula(f.getIdPelicula()),
+                    f.getFecha(),
+                    f.getHoraInicio(),
+                    obtenerNombreSala(f.getIdSala()),
+                    String.format("%,.2f", f.getPrecioUnitario())
                 });
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al cargar productos: " + ex.getMessage(), 
+            JOptionPane.showMessageDialog(this, "Error al cargar funciones: " + ex.getMessage(), 
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
-    private String obtenerNombreTipoProducto(int idTipo) {
+    private String obtenerNombrePelicula(int idPelicula) {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
-                 "SELECT tipo_producto FROM tipo_producto WHERE idtipoproducto = ?")) {
+                 "SELECT titulo FROM pelicula WHERE idpelicula = ?")) {
             
-            stmt.setInt(1, idTipo);
+            stmt.setInt(1, idPelicula);
             ResultSet rs = stmt.executeQuery();
             
-            return rs.next() ? rs.getString("tipo_producto") : "Desconocido";
+            return rs.next() ? rs.getString("titulo") : "Desconocida";
         } catch (SQLException ex) {
             ex.printStackTrace();
             return "Error";
         }
     }
     
-    
+    private String obtenerNombreSala(int idSala) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                 "SELECT nombre_sala FROM salas WHERE idsalas = ?")) {
+            
+            stmt.setInt(1, idSala);
+            ResultSet rs = stmt.executeQuery();
+            
+            return rs.next() ? rs.getString("nombre_sala") : "Desconocida";
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return "Error";
+        }
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -87,22 +102,37 @@ public class MainProductosForm extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jLabel2 = new javax.swing.JLabel();
+        txtBuscar = new javax.swing.JTextField();
+        btnBuscars = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        tblProductos = new javax.swing.JTable();
+        tblFunciones = new javax.swing.JTable();
         jPanel1 = new javax.swing.JPanel();
         btnAgregar = new javax.swing.JButton();
         btnEditar = new javax.swing.JButton();
         btnEliminar = new javax.swing.JButton();
         btnSalir = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
-        txtBuscar = new javax.swing.JTextField();
-        btnBuscar = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
+        btnBuscarp = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
 
-        tblProductos.setModel(new javax.swing.table.DefaultTableModel(
+        jLabel2.setFont(new java.awt.Font("Gadugi", 1, 12)); // NOI18N
+        jLabel2.setText("BUSCAR:");
+
+        btnBuscars.setFont(new java.awt.Font("Gadugi", 1, 12)); // NOI18N
+        btnBuscars.setText("Sala");
+        btnBuscars.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBuscarsActionPerformed(evt);
+            }
+        });
+
+        jLabel1.setFont(new java.awt.Font("Empire", 0, 48)); // NOI18N
+        jLabel1.setText("Formulario de Funciones");
+
+        tblFunciones.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {},
                 {},
@@ -113,7 +143,7 @@ public class MainProductosForm extends javax.swing.JFrame {
 
             }
         ));
-        jScrollPane1.setViewportView(tblProductos);
+        jScrollPane1.setViewportView(tblFunciones);
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Opciones del Formulario", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Gadugi", 1, 12))); // NOI18N
 
@@ -177,19 +207,13 @@ public class MainProductosForm extends javax.swing.JFrame {
                 .addContainerGap(24, Short.MAX_VALUE))
         );
 
-        jLabel2.setFont(new java.awt.Font("Gadugi", 1, 12)); // NOI18N
-        jLabel2.setText("BUSCAR:");
-
-        btnBuscar.setFont(new java.awt.Font("Gadugi", 1, 12)); // NOI18N
-        btnBuscar.setText("Aceptar");
-        btnBuscar.addActionListener(new java.awt.event.ActionListener() {
+        btnBuscarp.setFont(new java.awt.Font("Gadugi", 1, 12)); // NOI18N
+        btnBuscarp.setText("Pelicula");
+        btnBuscarp.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBuscarActionPerformed(evt);
+                btnBuscarpActionPerformed(evt);
             }
         });
-
-        jLabel1.setFont(new java.awt.Font("Empire", 0, 48)); // NOI18N
-        jLabel1.setText("Formulario de Productos");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -203,10 +227,12 @@ public class MainProductosForm extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 62, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 552, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(12, 12, 12)
-                        .addComponent(btnBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(20, Short.MAX_VALUE))
+                        .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 431, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnBuscarp, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnBuscars, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel1)
@@ -221,68 +247,99 @@ public class MainProductosForm extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnBuscar))
+                    .addComponent(btnBuscars)
+                    .addComponent(btnBuscarp))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(25, 25, 25)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(15, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnBuscarsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarsActionPerformed
+        String busqueda = txtBuscar.getText().trim();
+        if (busqueda.isEmpty()) {
+            cargarFunciones();
+        } else {
+            try {
+                model.setRowCount(0);
+                int idSala = Integer.parseInt(busqueda);
+                List<Funcion> funciones = funcionDAO.buscarPorSala(idSala);
+                
+                for (Funcion f : funciones) {
+                    model.addRow(new Object[]{
+                        f.getIdFuncion(),
+                        obtenerNombrePelicula(f.getIdPelicula()),
+                        f.getFecha(),
+                        f.getHoraInicio(),
+                        obtenerNombreSala(f.getIdSala()),
+                        String.format("%,.2f", f.getPrecioUnitario())
+                    });
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Ingrese un ID de sala válido", 
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error al buscar funciones: " + ex.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_btnBuscarsActionPerformed
+
     private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
-        ProductoDialog dialog = new ProductoDialog(this, true, null);
+        FuncionesDialog dialog = new FuncionesDialog(this, true, null);
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
-        cargarProductos();
+        cargarFunciones();
     }//GEN-LAST:event_btnAgregarActionPerformed
 
     private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
-        int filaSeleccionada = tblProductos.getSelectedRow();
+        int filaSeleccionada = tblFunciones.getSelectedRow();
         if (filaSeleccionada >= 0) {
-            BigInteger idProducto = (BigInteger) model.getValueAt(filaSeleccionada, 0);
+            int idFuncion = (int) model.getValueAt(filaSeleccionada, 0);
             try {
-                Producto producto = productoDAO.obtenerPorId(idProducto);
-                ProductoDialog dialog = new ProductoDialog(this, true, producto);
+                Funcion funcion = funcionDAO.obtenerPorId(idFuncion);
+                FuncionesDialog dialog = new FuncionesDialog(this, true, funcion);
                 dialog.setLocationRelativeTo(this);
                 dialog.setVisible(true);
-                cargarProductos();
+                cargarFunciones();
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error al cargar producto: " + ex.getMessage(), 
+                JOptionPane.showMessageDialog(this, "Error al cargar función: " + ex.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Seleccione un producto de la tabla", 
+            JOptionPane.showMessageDialog(this, "Seleccione una función de la tabla", 
                 "Advertencia", JOptionPane.WARNING_MESSAGE);
         }
     }//GEN-LAST:event_btnEditarActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        int filaSeleccionada = tblProductos.getSelectedRow();
+        int filaSeleccionada = tblFunciones.getSelectedRow();
         if (filaSeleccionada >= 0) {
-            BigInteger idProducto = (BigInteger) model.getValueAt(filaSeleccionada, 0);
+            int idFuncion = (int) model.getValueAt(filaSeleccionada, 0);
             int confirmacion = JOptionPane.showConfirmDialog(
                 this, 
-                "¿Está seguro de eliminar este producto?", 
+                "¿Está seguro de eliminar esta función?", 
                 "Confirmar eliminación", 
                 JOptionPane.YES_NO_OPTION
             );
             
             if (confirmacion == JOptionPane.YES_OPTION) {
                 try {
-                    productoDAO.eliminar(idProducto);
-                    cargarProductos();
-                    JOptionPane.showMessageDialog(this, "Producto eliminado correctamente", 
+                    funcionDAO.eliminar(idFuncion);
+                    cargarFunciones();
+                    JOptionPane.showMessageDialog(this, "Función eliminada correctamente", 
                         "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(this, "Error al eliminar producto: " + ex.getMessage(), 
+                    JOptionPane.showMessageDialog(this, "Error al eliminar función: " + ex.getMessage(), 
                         "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Seleccione un producto de la tabla", 
+            JOptionPane.showMessageDialog(this, "Seleccione una función de la tabla", 
                 "Advertencia", JOptionPane.WARNING_MESSAGE);
         }
     }//GEN-LAST:event_btnEliminarActionPerformed
@@ -291,33 +348,36 @@ public class MainProductosForm extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_btnSalirActionPerformed
 
-    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
-        String busqueda = txtBuscar.getText().trim();
+    private void btnBuscarpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarpActionPerformed
+            // TODO add your handling code here:
+            String busqueda = txtBuscar.getText().trim();
         if (busqueda.isEmpty()) {
-            cargarProductos();
+            cargarFunciones();
         } else {
             try {
                 model.setRowCount(0);
-                BigInteger codBarras = new BigInteger(busqueda);
-                List<Producto> productos = productoDAO.buscarPorBarras(codBarras);
+                int idPelicula = Integer.parseInt(busqueda);
+                List<Funcion> funciones = funcionDAO.buscarPorPelicula(idPelicula);
                 
-                for (Producto p : productos) {
+                for (Funcion f : funciones) {
                     model.addRow(new Object[]{
-                        p.getIdProducto(),
-                        p.getProducto(),
-                        obtenerNombreTipoProducto(p.getIdTipoProducto()),
-                        String.format("%,.2f", p.getPrecioUnitario())
+                        f.getIdFuncion(),
+                        obtenerNombrePelicula(f.getIdPelicula()),
+                        f.getFecha(),
+                        f.getHoraInicio(),
+                        obtenerNombreSala(f.getIdSala()),
+                        String.format("%,.2f", f.getPrecioUnitario())
                     });
                 }
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Ingrese un código de barras válido", 
+                JOptionPane.showMessageDialog(this, "Ingrese un ID de película válido", 
                     "Error", JOptionPane.ERROR_MESSAGE);
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error al buscar productos: " + ex.getMessage(), 
+                JOptionPane.showMessageDialog(this, "Error al buscar funciones: " + ex.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }//GEN-LAST:event_btnBuscarActionPerformed
+    }//GEN-LAST:event_btnBuscarpActionPerformed
 
     /**
      * @param args the command line arguments
@@ -336,27 +396,28 @@ public class MainProductosForm extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MainProductosForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFuncionForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MainProductosForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFuncionForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MainProductosForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFuncionForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MainProductosForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFuncionForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new MainProductosForm().setVisible(true);
+                new MainFuncionForm().setVisible(true);
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAgregar;
-    private javax.swing.JButton btnBuscar;
+    private javax.swing.JButton btnBuscarp;
+    private javax.swing.JButton btnBuscars;
     private javax.swing.JButton btnEditar;
     private javax.swing.JButton btnEliminar;
     private javax.swing.JButton btnSalir;
@@ -364,7 +425,7 @@ public class MainProductosForm extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable tblProductos;
+    private javax.swing.JTable tblFunciones;
     private javax.swing.JTextField txtBuscar;
     // End of variables declaration//GEN-END:variables
 }
