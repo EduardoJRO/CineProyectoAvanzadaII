@@ -460,7 +460,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'juan.perez@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(2,'maria.lopez@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(3,'carlos.ruiz@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(4,'ana.garcia@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(5,'luis.torres@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(6,'elena.diaz@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(7,'manuel.herrera@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(8,'lucia.vega@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(9,'raul.rivera@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(10,'silvia.cruz@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(11,'ismael.soto@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1),(12,'gabriela.mendez@cineproyecto.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,1);
+INSERT INTO `usuarios` VALUES (1,'juan.perez@cineproyecto.com','admin123',NULL,1),(2,'maria.lopez@cineproyecto.com','usuario2',NULL,1),(3,'carlos.ruiz@cineproyecto.com','usuario3',NULL,1),(4,'ana.garcia@cineproyecto.com','usuario4',NULL,1),(5,'luis.torres@cineproyecto.com','usuario5',NULL,1),(6,'elena.diaz@cineproyecto.com','usuario6',NULL,1),(7,'manuel.herrera@cineproyecto.com','usuario7',NULL,1),(8,'lucia.vega@cineproyecto.com','usuario8',NULL,1),(9,'raul.rivera@cineproyecto.com','usuario9',NULL,1),(10,'silvia.cruz@cineproyecto.com','usuario10',NULL,1),(11,'ismael.soto@cineproyecto.com','usuario11',NULL,1),(12,'gabriela.mendez@cineproyecto.com','usuario12',NULL,1);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -473,4 +473,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-05 18:53:12
+-- Dump completed on 2025-08-07 21:56:16
