@@ -22,6 +22,10 @@ Para ejecutar correctamente este proyecto, asegúrate de tener instalado lo sigu
 Sigue los pasos a continuación para configurar y ejecutar el proyecto correctamente:
 
 ### 1. Clonar o descargar el repositorio
+Ejecutar El MainAcceso para ejecutar el Proyecto
+EL MDI, Cualquier Dialog o Form no son accesibles directamente sin haber pasado por el Log
 
 ```bash
 git clone https://github.com/tu_usuario/.git
+
+
