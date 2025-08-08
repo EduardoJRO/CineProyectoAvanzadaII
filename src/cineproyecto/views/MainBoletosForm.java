@@ -3,19 +3,79 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package cineproyecto.views;
+import cineproyecto.connection.DatabaseConnection;
+import cineproyecto.dao.BoletoDAO;
+import cineproyecto.dao.controller.BoletoDAOImpl;
+import cineproyecto.models.Boleto;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.RowFilter;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+
 
 /**
  *
  * @author LENOVO
  */
 public class MainBoletosForm extends javax.swing.JFrame {
-
+     private final BoletoDAO boletoDAO;
+    private DefaultTableModel model;
+    private TableRowSorter<DefaultTableModel> sorter;
     /**
      * Creates new form MainBoletosForm
      */
-    public MainBoletosForm() {
+    public MainBoletosForm() throws SQLException {
         initComponents();
+        Connection conn = DatabaseConnection.getConnection();
+        boletoDAO = new BoletoDAOImpl(conn);
+        configurarTabla();
+        cargarBoletos();
+        
     }
+    private void configurarTabla() {
+        model = new DefaultTableModel(
+            new Object[][]{},
+            new String[]{"ID", "ID Función", "ID Compra", "Asiento", "Precio Final"}
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Hacer la tabla no editable
+            }
+        };
+        
+        tblDetalles.setModel(model);
+        sorter = new TableRowSorter<>(model);
+        tblDetalles.setRowSorter(sorter);
+    }
+    private void cargarBoletos() {
+        try {
+            model.setRowCount(0); // Limpiar tabla
+            List<Boleto> boletos = boletoDAO.obtenerTodos();
+            
+            for (Boleto boleto : boletos) {
+                model.addRow(new Object[]{
+                    boleto.getIdBoleto(),
+                    boleto.getIdFuncion(),
+                    boleto.getIdCompra(),
+                    boleto.getAsiento(),
+                    String.format("$%.2f", boleto.getPrecioFinal())
+                });
+            }
+        } catch (SQLException ex) {
+            mostrarError("Error al cargar boletos: " + ex.getMessage());
+        }
+    }
+    
+    private void mostrarError(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -140,10 +200,60 @@ public class MainBoletosForm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
-
+      try {
+        // Crear y mostrar el diálogo
+        BoletosDialog dialog = new BoletosDialog(
+            (MainBoletosForm) (javax.swing.JFrame) this.getParent(), // Ventana padre
+            true,                                 // Modal
+            null                                  // Boleto nuevo (null)
+        );
+        
+        // Centrar el diálogo respecto al formulario principal
+        dialog.setLocationRelativeTo(this);
+        
+        // Mostrar el diálogo (bloqueante)
+        dialog.setVisible(true);
+        
+        // Actualizar la tabla después de cerrar el diálogo
+        cargarBoletos();
+        
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this,
+            "Error al abrir el formulario: " + e.getMessage(),
+            "Error",
+            JOptionPane.ERROR_MESSAGE);
+    }
     }//GEN-LAST:event_btnAgregarActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+         int fila = tblDetalles.getSelectedRow();
+        if (fila >= 0) {
+            int id = (int) model.getValueAt(fila, 0);
+            
+            int confirmacion = JOptionPane.showConfirmDialog(
+                this, 
+                "¿Está seguro de eliminar este boleto?", 
+                "Confirmar eliminación", 
+                JOptionPane.YES_NO_OPTION);
+            
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                try {
+                    boletoDAO.eliminar(id);
+                    cargarBoletos();
+                    JOptionPane.showMessageDialog(this, 
+                        "Boleto eliminado correctamente", 
+                        "Éxito", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (SQLException ex) {
+                    mostrarError("Error al eliminar boleto: " + ex.getMessage());
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Seleccione un boleto de la tabla", 
+                "Advertencia", 
+                JOptionPane.WARNING_MESSAGE);
+        }
 
     }//GEN-LAST:event_btnEliminarActionPerformed
 
@@ -151,6 +261,16 @@ public class MainBoletosForm extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_btnSalirActionPerformed
 
+   
+
+    private void mostrarAdvertencia(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Advertencia", JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void mostrarExito(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -181,7 +301,11 @@ public class MainBoletosForm extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new MainBoletosForm().setVisible(true);
+                try {
+                    new MainBoletosForm().setVisible(true);
+                } catch (SQLException ex) {
+                    Logger.getLogger(MainBoletosForm.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
     }
@@ -195,4 +319,6 @@ public class MainBoletosForm extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable tblDetalles;
     // End of variables declaration//GEN-END:variables
+
+    
 }
