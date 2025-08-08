@@ -7,6 +7,7 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.EmpleadoDAO;
 import cineproyecto.dao.controller.EmpleadoDAOImpl;
 import cineproyecto.models.Empleado;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,9 +28,17 @@ public class EmpleadoDialog extends javax.swing.JDialog {
      */
     public EmpleadoDialog(java.awt.Frame parent, boolean modal, Empleado empleado) {
         super(parent, modal);
-        initComponents();
         empleadoDAO = new EmpleadoDAOImpl();
         this.empleado = empleado;
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+        initComponents();
         configurarInterfaz();
         cargarCombos();
     }

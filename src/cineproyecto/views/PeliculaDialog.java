@@ -8,6 +8,7 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.PeliculaDAO;
 import cineproyecto.dao.controller.PeliculaDAOImpl;
 import cineproyecto.models.Pelicula;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,9 +31,18 @@ private final PeliculaDAO peliculaDAO;
      */
     public PeliculaDialog(java.awt.Frame parent, boolean modal, Pelicula pelicula) {
          super(parent, modal);
-        initComponents();
+        
         peliculaDAO = new PeliculaDAOImpl();
         this.pelicula = pelicula;
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+        initComponents();
         configurarInterfaz();
         cargarCombos();
     }

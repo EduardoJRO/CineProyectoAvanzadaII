@@ -7,6 +7,7 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.DetalleCompraDAO;
 import cineproyecto.dao.controller.DetalleCompraDAOImpl;
 import cineproyecto.models.DetalleCompra;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,9 +28,17 @@ public class DetalleDialog extends javax.swing.JDialog {
      */
     public DetalleDialog(java.awt.Frame parent, boolean modal, Integer idCompraFiltro) {
         super(parent, modal);
-        initComponents();
-        detalleDAO = new DetalleCompraDAOImpl();
         
+        detalleDAO = new DetalleCompraDAOImpl();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+        initComponents();
         cargarCombos();
         configurarTabla();
         cargarDetallesCompra(); // Cargar datos iniciales

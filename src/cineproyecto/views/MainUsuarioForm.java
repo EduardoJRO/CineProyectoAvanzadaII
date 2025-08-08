@@ -5,6 +5,8 @@
 package cineproyecto.views;
 import cineproyecto.dao.controller.UsuarioDAO;
 import cineproyecto.models.Usuarios;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -19,6 +21,16 @@ private Usuarios usuarioActual;
      * Creates new form MainUsuarioForm
      */
     public MainUsuarioForm() {
+        usuarioDAO = UsuarioDAO.getInstance();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
         initComponents();
         setLocationRelativeTo(null); // Centrar en la pantalla
         
@@ -52,7 +64,7 @@ private Usuarios usuarioActual;
                 }
             }
         });
-        usuarioDAO = UsuarioDAO.getInstance();
+        
         cargarTablaUsuarios();
         setLocationRelativeTo(null); // Centrar la ventana
         setTitle("Gestión de Usuarios"); // Título de la ventana

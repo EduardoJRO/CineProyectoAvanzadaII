@@ -7,6 +7,8 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.FuncionDAO;
 import cineproyecto.dao.controller.FuncionesDAOImpl;
 import cineproyecto.models.Funcion;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.sql.*;
 import java.util.List;
 import javax.swing.*;
@@ -22,8 +24,18 @@ private DefaultTableModel model;
      * Creates new form MainFuncionForm
      */
     public MainFuncionForm() {
-        initComponents();
+        
         funcionDAO = new FuncionesDAOImpl();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
+        initComponents();
         configurarTabla();
         cargarFunciones();
     }

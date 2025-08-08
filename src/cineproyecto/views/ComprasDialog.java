@@ -7,6 +7,7 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.CompraDAO;
 import cineproyecto.dao.controller.CompraDAOImpl;
 import cineproyecto.models.Compra;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,9 +26,18 @@ private final CompraDAO compraDAO;
      */
     public ComprasDialog(java.awt.Frame parent, boolean modal, Compra compra) {
         super(parent, modal);
-        initComponents();
+        
         compraDAO = new CompraDAOImpl();
         this.compra = compra;
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+        initComponents();
         configurarInterfaz();
         cargarCombos();
     }

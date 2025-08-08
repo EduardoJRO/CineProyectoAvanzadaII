@@ -7,6 +7,8 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.BoletoDAO;
 import cineproyecto.dao.controller.BoletoDAOImpl;
 import cineproyecto.models.Boleto;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -30,9 +32,19 @@ public class MainBoletosForm extends javax.swing.JFrame {
      * Creates new form MainBoletosForm
      */
     public MainBoletosForm() throws SQLException {
-        initComponents();
+        
         Connection conn = DatabaseConnection.getConnection();
         boletoDAO = new BoletoDAOImpl(conn);
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
+        initComponents();
         configurarTabla();
         cargarBoletos();
         
@@ -94,7 +106,7 @@ public class MainBoletosForm extends javax.swing.JFrame {
         btnEliminar = new javax.swing.JButton();
         btnSalir = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         tblDetalles.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {

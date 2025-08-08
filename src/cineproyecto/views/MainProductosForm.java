@@ -7,6 +7,8 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.ProductoDAO;
 import cineproyecto.dao.controller.ProductoDAOImpl;
 import cineproyecto.models.Producto;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.math.BigInteger;
 import java.sql.*;
 import java.util.List;
@@ -23,8 +25,18 @@ public class MainProductosForm extends javax.swing.JFrame {
      * Creates new form MainProductosForm
      */
     public MainProductosForm() {
-        initComponents();
+        
         productoDAO = new ProductoDAOImpl();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
+        initComponents();
         configurarTabla();
         cargarProductos();
     }

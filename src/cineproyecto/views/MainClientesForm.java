@@ -7,6 +7,8 @@ package cineproyecto.views;
 import cineproyecto.dao.ClienteDAO;
 import cineproyecto.dao.controller.ClienteDAOImpl;
 import cineproyecto.models.Cliente;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.sql.SQLException;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -26,8 +28,18 @@ public class MainClientesForm extends javax.swing.JFrame {
      */
     public MainClientesForm() {
         
-          initComponents();
+        
         clienteDAO = new ClienteDAOImpl();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
+        initComponents();
         configurarTabla();
         cargarClientes();
     }

@@ -7,6 +7,7 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.ProductoDAO;
 import cineproyecto.dao.controller.ProductoDAOImpl;
 import cineproyecto.models.Producto;
+import cineproyecto.view.log.SessionManager;
 import java.math.BigInteger;
 import java.sql.*;
 import javax.swing.*;
@@ -23,9 +24,18 @@ public class ProductoDialog extends javax.swing.JDialog {
      */
     public ProductoDialog(java.awt.Frame parent, boolean modal, Producto producto) {
         super(parent, modal);
-        initComponents();
+        
         productoDAO = new ProductoDAOImpl();
         this.producto = producto;
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+        initComponents();
         configurarInterfaz();
         cargarTiposProducto();
     }

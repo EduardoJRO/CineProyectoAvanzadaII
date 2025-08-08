@@ -7,6 +7,8 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.CompraDAO;
 import cineproyecto.dao.controller.CompraDAOImpl;
 import cineproyecto.models.Compra;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,8 +27,18 @@ private DefaultTableModel model;
      * Creates new form MainComprasForm
      */
     public MainComprasForm() {
-        initComponents();
+        
         compraDAO = new CompraDAOImpl();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
+        initComponents();
         configurarTabla();
         cargarCompras();
     }

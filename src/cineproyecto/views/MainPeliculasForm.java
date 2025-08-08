@@ -8,6 +8,8 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.PeliculaDAO;
 import cineproyecto.dao.controller.PeliculaDAOImpl;
 import cineproyecto.models.Pelicula;
+import cineproyecto.view.log.MainAcceso;
+import cineproyecto.view.log.SessionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,8 +28,18 @@ public class MainPeliculasForm extends javax.swing.JFrame {
      * Creates new form MainPeliculasForm
      */
     public MainPeliculasForm() {
-       initComponents();
+       
         peliculaDAO = new PeliculaDAOImpl();
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(null, 
+                "Acceso no autorizado", 
+                "Debe iniciar sesión", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra este formulario
+            new MainAcceso().setVisible(true); // Redirige al login
+            return;
+        }
+        initComponents();
         configurarTabla();
         cargarPeliculas();
     }

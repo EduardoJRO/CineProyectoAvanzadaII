@@ -8,6 +8,7 @@ package cineproyecto.views;
 import cineproyecto.dao.ClienteDAO;
 import cineproyecto.dao.controller.ClienteDAOImpl;
 import cineproyecto.models.Cliente;
+import cineproyecto.view.log.SessionManager;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import javax.swing.JOptionPane;
@@ -24,9 +25,19 @@ private final ClienteDAO clienteDAO;
      */
     public ClienteDialog(java.awt.Frame parent, boolean modal, Cliente cliente) {
          super(parent, modal);
-        initComponents();
+        
+        
         clienteDAO = new ClienteDAOImpl();
         this.cliente = cliente;
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+         initComponents();
         configurarInterfaz();
     }
      private void configurarInterfaz() {

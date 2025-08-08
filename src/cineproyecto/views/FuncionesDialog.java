@@ -7,6 +7,7 @@ import cineproyecto.connection.DatabaseConnection;
 import cineproyecto.dao.FuncionDAO;
 import cineproyecto.dao.controller.FuncionesDAOImpl;
 import cineproyecto.models.Funcion;
+import cineproyecto.view.log.SessionManager;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,9 +26,19 @@ private final FuncionDAO funcionDAO;
      */
     public FuncionesDialog(java.awt.Frame parent, boolean modal, Funcion funcion) {
         super(parent, modal);
-        initComponents();
+        
         funcionDAO = new FuncionesDAOImpl();
         this.funcion = funcion;
+        
+        if (!SessionManager.getInstance().isLoggedIn()) {
+            JOptionPane.showMessageDialog(parent, 
+                "Sesión requerida", 
+                "Error de autenticación", 
+                JOptionPane.ERROR_MESSAGE);
+            this.dispose(); // Cierra el diálogo
+            return;
+        }
+        initComponents();
         configurarInterfaz();
         cargarPeliculas();
         cargarSalas();
