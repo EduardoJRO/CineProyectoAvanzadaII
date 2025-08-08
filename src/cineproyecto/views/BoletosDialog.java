@@ -51,8 +51,62 @@ public class BoletosDialog extends javax.swing.JDialog {
         // Configurar la tabla y cargar datos
         configurarTablaCompras();
         cargarIDsCompra();
-       
+        
+        //Configuracion de la tabla de funciones
+        configurarTablaFunciones();
+        cargarFunciones();
+              tblfuncion.getSelectionModel().addListSelectionListener(e -> {
+    if (!e.getValueIsAdjusting()) {
+        int filaSeleccionada = tblfuncion.getSelectedRow();
+        if (filaSeleccionada >= 0) {
+            int idFuncion = (int) tblfuncion.getValueAt(filaSeleccionada, 0);
+            txtIdFuncion.setText(String.valueOf(idFuncion));
+            
+            // Obtener precio de la función
+            double precioFuncion = obtenerPrecioFuncion(idFuncion);
+            
+            // Calcular total (suma de subtotales + precio función)
+            double totalCompra = calcularTotalCompra();
+            double total = totalCompra + precioFuncion;
+            
+            // Mostrar el total con formato pero guardar solo el número
+            txtIdFuncion2.setText(String.format("Lps %.2f", total));
+        }
     }
+});
+
+    }
+    private double calcularTotalCompra() {
+    DefaultTableModel modelo = (DefaultTableModel) tblcompras.getModel();
+    double total = 0.0;
+    
+    for (int i = 0; i < modelo.getRowCount(); i++) {
+        double subtotal = (double) modelo.getValueAt(i, 4); // Columna subtotal
+        total += subtotal;
+    }
+    
+    return total;
+}
+            private boolean asientoOcupado(int idFuncion, String asiento) {
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(
+                     "SELECT COUNT(*) FROM boletos WHERE idfuncion = ? AND asiento = ?")) {
+
+                ps.setInt(1, idFuncion);
+                ps.setString(2, asiento);
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Error al verificar asiento: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            return false;
+        }
         private void configurarTablaCompras() {
         DefaultTableModel modelo = new DefaultTableModel() {
             @Override
@@ -116,46 +170,135 @@ public class BoletosDialog extends javax.swing.JDialog {
 }
 
     private void cargarDetallesCompra(int idCompra) {
-        DefaultTableModel modelo = (DefaultTableModel) tblcompras.getModel();
-        modelo.setRowCount(0);
+    DefaultTableModel modelo = (DefaultTableModel) tblcompras.getModel();
+    modelo.setRowCount(0);
+    
+    try (Connection con = DatabaseConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(
+             "SELECT dc.idproducto, p.producto, dc.cantidad, " +
+             "dc.precio_unitario, (dc.cantidad * dc.precio_unitario) as subtotal " +
+             "FROM detalle_compras dc " +
+             "JOIN productos p ON dc.idproducto = p.idproducto " +
+             "WHERE dc.idcompra = ?");
+         ) {
         
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                 "SELECT dc.idproducto, p.producto, dc.cantidad, " +
-                 "dc.precio_unitario, (dc.cantidad * dc.precio_unitario) as subtotal " +
-                 "FROM detalle_compras dc " +
-                 "JOIN productos p ON dc.idproducto = p.idproducto " +
-                 "WHERE dc.idcompra = ?")) {
-            
-            ps.setInt(1, idCompra);
-            ResultSet rs = ps.executeQuery();
-            
-            double total = 0;
-            while(rs.next()) {
-                Object[] fila = {
-                    rs.getLong("idproducto"),
-                    rs.getString("producto"),
-                    rs.getInt("cantidad"),
-                    rs.getDouble("precio_unitario"),
-                    rs.getDouble("subtotal")
-                };
-                modelo.addRow(fila);
-                total += rs.getDouble("subtotal");
-            }
-            
-            txtIdFuncion2.setText(String.format("LPS: %.2f", total));
-            
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error al cargar detalles: " + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
+        ps.setInt(1, idCompra);
+        ResultSet rs = ps.executeQuery();
+        
+        double totalCompra = 0.0;
+        while(rs.next()) {
+            Object[] fila = {
+                rs.getLong("idproducto"),
+                rs.getString("producto"),
+                rs.getInt("cantidad"),
+                rs.getDouble("precio_unitario"),
+                rs.getDouble("subtotal")
+            };
+            modelo.addRow(fila);
+            totalCompra += rs.getDouble("subtotal");
         }
+        
+        // Obtener ID de función seleccionada (si hay)
+        String idFuncionStr = txtIdFuncion.getText();
+        if (!idFuncionStr.isEmpty()) {
+            int idFuncion = Integer.parseInt(idFuncionStr);
+            double precioFuncion = obtenerPrecioFuncion(idFuncion);
+            double total = totalCompra + precioFuncion;
+            txtIdFuncion2.setText(String.format("Lps/ %.2f", total));
+        } else {
+            txtIdFuncion2.setText(String.format("Lps/ %.2f", totalCompra));
+        }
+        
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, 
+            "Error al cargar detalles: " + ex.getMessage(),
+            "Error", JOptionPane.ERROR_MESSAGE);
+    } catch (NumberFormatException ex) {
+        // No hacer nada si no hay función seleccionada
     }
+}
 
-      
+      // Funciones 
 
+            private void configurarTablaFunciones() {
+            DefaultTableModel modelo = new DefaultTableModel() {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
 
+            modelo.addColumn("ID Función");
+            modelo.addColumn("Película");
+            modelo.addColumn("Sala");
+            modelo.addColumn("Fecha");
+            modelo.addColumn("Hora");
+            modelo.addColumn("Precio");
 
+            tblfuncion.setModel(modelo);
+
+            // Ajustar ancho columnas
+            tblfuncion.getColumnModel().getColumn(0).setPreferredWidth(80);
+            tblfuncion.getColumnModel().getColumn(1).setPreferredWidth(200);
+            tblfuncion.getColumnModel().getColumn(2).setPreferredWidth(100);
+            tblfuncion.getColumnModel().getColumn(3).setPreferredWidth(100);
+            tblfuncion.getColumnModel().getColumn(4).setPreferredWidth(80);
+            tblfuncion.getColumnModel().getColumn(5).setPreferredWidth(80);
+        }
+        private void cargarFunciones() {
+            DefaultTableModel modelo = (DefaultTableModel) tblfuncion.getModel();
+            modelo.setRowCount(0);
+
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(
+                     "SELECT f.idfunciones, p.titulo as pelicula, s.nombre_sala, " +
+                     "DATE_FORMAT(f.fecha, '%d/%m/%Y') as fecha, " +
+                     "TIME_FORMAT(f.hora_inicio, '%H:%i') as hora, f.precio_unitario " +
+                     "FROM funciones f " +
+                     "JOIN pelicula p ON f.idpelicula = p.idpelicula " +
+                     "JOIN salas s ON f.idsalas = s.idsalas " +
+                     "ORDER BY f.fecha, f.hora_inicio");
+                 ResultSet rs = ps.executeQuery()) {
+
+                while(rs.next()) {
+                    modelo.addRow(new Object[]{
+                        rs.getInt("idfunciones"),
+                        rs.getString("pelicula"),
+                        rs.getString("nombre_sala"),
+                        rs.getString("fecha"),
+                        rs.getString("hora"),
+                        "S/ " + rs.getDouble("precio_unitario")
+                    });
+                }
+
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Error al cargar funciones: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        
+        private double obtenerPrecioFuncion(int idFuncion) {
+    try (Connection con = DatabaseConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(
+             "SELECT precio_unitario FROM funciones WHERE idfunciones = ?")) {
+        
+        ps.setInt(1, idFuncion);
+        ResultSet rs = ps.executeQuery();
+        
+        if (rs.next()) {
+            return rs.getDouble("precio_unitario");
+        }
+        
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, 
+            "Error al obtener precio de función: " + ex.getMessage(),
+            "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    return 0.0;
+}
+        
+        
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -365,22 +508,52 @@ public class BoletosDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
-            if (cmbidcompra.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione una compra primero");
+                                                    
+    // Validación inicial más robusta
+    if (cmbidcompra.getSelectedItem() == null) {
+        JOptionPane.showMessageDialog(this, "Seleccione una compra primero", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    
+    if (txtIdFuncion.getText().trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Seleccione una función de la tabla", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    
+    if (txtIdFuncion1.getText().trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Ingrese un número de asiento válido", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    
+    try {
+        int idFuncion = Integer.parseInt(txtIdFuncion.getText().trim());
+        String asiento = txtIdFuncion1.getText().trim().toUpperCase();
+        int idCompra = ((ComboItem) cmbidcompra.getSelectedItem()).getId();
+        
+        // Validar formato de asiento (ejemplo: A1, B12)
+        if (!asiento.matches("^[A-Za-z]\\d{1,2}$")) {
+            JOptionPane.showMessageDialog(this, 
+                "Formato de asiento inválido. Use formato como A1, B12", 
+                "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        int idCompra = ((ComboItem) cmbidcompra.getSelectedItem()).getId();
+        // Verificar si el asiento está ocupado
+        if (asientoOcupado(idFuncion, asiento)) {
+            JOptionPane.showMessageDialog(this, 
+                "El asiento " + asiento + " ya está ocupado para esta función",
+                "Asiento no disponible", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Obtener el precio final correctamente
+        String precioTexto = txtIdFuncion2.getText().replaceAll("[^\\d.]", ""); // Eliminar todo excepto números y punto
+        double precioFinal = Double.parseDouble(precioTexto);
         
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                  "INSERT INTO boletos (idfuncion, idcompra, asiento, precio_final) " +
                  "VALUES (?, ?, ?, ?)")) {
-            
-            // Obtener los valores de los campos
-            int idFuncion = Integer.parseInt(txtIdFuncion.getText());
-            String asiento = txtIdFuncion1.getText();
-            double precioFinal = Double.parseDouble(txtIdFuncion2.getText().replace("S/ ", ""));
             
             ps.setInt(1, idFuncion);
             ps.setInt(2, idCompra);
@@ -398,11 +571,15 @@ public class BoletosDialog extends javax.swing.JDialog {
             JOptionPane.showMessageDialog(this, 
                 "Error al guardar boleto: " + ex.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Datos inválidos en los campos",
-                "Error", JOptionPane.ERROR_MESSAGE);
         }
+        
+    } catch (NumberFormatException ex) {
+        JOptionPane.showMessageDialog(this, 
+            "Datos inválidos: " + ex.getMessage(),
+            "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+        
     }//GEN-LAST:event_btnGuardarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
